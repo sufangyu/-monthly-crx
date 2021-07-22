@@ -38,12 +38,10 @@
           style="width: 100%"
         >
           <el-option
-            label="区域一"
-            value="shanghai"
-          />
-          <el-option
-            label="区域二"
-            value="beijing"
+            v-for="item in users"
+            :key="item.id"
+            :label="item.nickname"
+            :value="item.id"
           />
         </el-select>
       </el-form-item>
@@ -52,20 +50,13 @@
         label="设置分类"
         prop="category"
       >
-        <el-select
+        <el-cascader
           v-model="article.category"
-          placeholder="请选择分类"
           style="width: 100%"
-        >
-          <el-option
-            label="区域一"
-            value="shanghai"
-          />
-          <el-option
-            label="区域二"
-            value="beijing"
-          />
-        </el-select>
+          :options="categories"
+          expand-trigger="hover"
+          :show-all-levels="false"
+        />
       </el-form-item>
 
       <el-form-item>
@@ -81,15 +72,20 @@
 </template>
 
 <script>
+import ajax from '@fdaciuk/ajax';
+
 export default {
   data() {
     return {
       article: {
         title: '',
+        link: '',
         description: '',
         reporter: '',
         category: '',
       },
+      users: [],
+      categories: [],
       // 校验规则
       rules: {
         title: [
@@ -109,15 +105,54 @@ export default {
   },
   created() {
     this.getCurrentChormeTab();
+    this.getUsers();
+    this.getCategories();
   },
   methods: {
+    getCategories() {
+      ajax({
+        method: 'get',
+        url: 'http://localhost:3000/categories',
+      }).then((res) => {
+        console.log('res =>>', res);
+        const tagsData = [];
+        (res || []).forEach((item, index) => {
+          tagsData[index] = {
+            value: item.value,
+            label: item.value,
+            children: item.children && item.children.map((tag) => ({
+              value: tag,
+              label: tag,
+            })),
+          };
+        });
+
+        this.categories = tagsData;
+      }).catch((err) => {
+        console.log(err);
+      });
+    },
+    getUsers() {
+      ajax({
+        method: 'get',
+        url: 'http://localhost:3000/users',
+      }).then((res) => {
+        console.log('res =>>', res);
+        this.users = res || [];
+      }).catch((err) => {
+        console.log(err);
+      });
+    },
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (!valid) {
+          this.$message({
+            message: '警告哦，这是一条警告消息',
+            type: 'warning',
+          });
           return false;
         }
-
-        console.log('提交');
+        console.log('提交', this.article);
       });
     },
     getCurrentChormeTab() {
